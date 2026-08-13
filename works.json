@@ -1,0 +1,8 @@
+{
+  "alice-demo": [
+    "demo-plugin-a"
+  ],
+  "bob-demo": [
+    "demo-plugin-b"
+  ]
+}

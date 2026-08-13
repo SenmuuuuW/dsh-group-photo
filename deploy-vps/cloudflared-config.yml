@@ -1,0 +1,8 @@
+# 放到 ~/.cloudflared/config.yml（有域名时用命名隧道，永久地址）
+tunnel: 你的隧道ID
+credentials-file: /root/.cloudflared/你的隧道ID.json
+
+ingress:
+  - hostname: photo.你的域名.com
+    service: http://localhost:80
+  - service: http_status:404

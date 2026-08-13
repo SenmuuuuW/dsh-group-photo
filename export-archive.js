@@ -1,0 +1,727 @@
+/**
+ * DSH 内测大合影 — 静态归档导出
+ * 用法: node export-archive.js
+ * 读取 members.json + works.json，生成完全自包含的 archive/index.html：
+ * 无服务器、无登录，含纪念册统计 / 时间线回放 / 大合影海报下载 / 留言胶卷条，
+ * 任何静态托管（GitHub Pages 等）都能永久展示
+ */
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+const ROOT = __dirname;
+
+const members = JSON.parse(fs.readFileSync(path.join(ROOT, 'members.json'), 'utf8'))
+  .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+let works = {};
+try { works = JSON.parse(fs.readFileSync(path.join(ROOT, 'works.json'), 'utf8')); } catch {}
+
+const thanksImgs = [1, 2, 3, 4].map((i) => {
+  try {
+    return 'data:image/jpeg;base64,' + fs.readFileSync(path.join(ROOT, 'public', 'whale-girl-' + i + '.jpg')).toString('base64');
+  } catch { return ''; }
+});
+
+const dataMembers = members.map((m) => ({
+  ...m,
+  works: (works[String(m.login).toLowerCase()] || []),
+}));
+
+const esc = (t) => String(t == null ? '' : t)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+const now = new Date();
+const ds = now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0');
+
+const cards = dataMembers.map((m) => {
+  const rot = ((((m.ghId || 0) % 5) - 2) * 1.4).toFixed(1);
+  const t = new Date(m.joinedAt);
+  const hh = String(t.getHours()).padStart(2, '0');
+  const mm = String(t.getMinutes()).padStart(2, '0');
+  const w = m.works || [];
+  const chip = (r) => '<a href="https://github.com/dsh-external/' + esc(r) + '" target="_blank" rel="noopener">' + esc(r) + '</a>';
+  const worksHtml = w.length
+    ? '<div class="works">' + w.slice(0, 3).map(chip).join('') +
+      (w.length > 3
+        ? '<span class="works-extra">' + w.slice(3).map(chip).join('') + '</span>' +
+          '<button class="works-toggle">展开全部 ' + w.length + ' 个 ▾</button>'
+        : '') +
+      '</div>'
+    : '';
+  return `
+    <figure class="card${String(m.login).toLowerCase() === 'shiroeirin' ? ' memorial' : ''}" style="--rot:${rot}deg">
+      ${String(m.login).toLowerCase() === 'shiroeirin' ? '<div class="memorial-title">shiro老师我们还记得你</div>' : ''}
+      <div class="photo">
+        <img loading="lazy" alt="${esc(m.login)}" src="${esc((m.avatar || '') + (m.avatar ? '&s=460' : ''))}">
+        <span class="no">#${m.ghId}</span>
+      </div>
+      <figcaption>
+        <div class="handle"><a href="https://github.com/${esc(m.login)}" target="_blank" rel="noopener">@${esc(m.login)}</a></div>
+        <div class="name">${esc(m.name || '')}</div>
+        <p class="msg">${m.message ? '“' + esc(m.message) + '”' : ''}</p>
+        <div class="time">${hh}:${mm}</div>
+        ${worksHtml}
+      </figcaption>
+    </figure>`;
+}).join('\n');
+
+const html = `<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DSH 内测大合影 · 纪念版</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%234d6bfe'/><text x='50' y='70' font-size='56' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
+<style>
+  :root { --bg:#0b0d17; --ink:#eef0f8; --muted:#99a2b8; --amber:#4d6bfe; --paper:#f2f5fa; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Segoe UI","Microsoft YaHei",sans-serif;
+    background: var(--bg);
+    color:var(--ink); min-height:100vh;
+  }
+  .film { height:26px; background:#12162a; position:relative; }
+  .film::after { content:""; position:absolute; inset:4px 0;
+    background:repeating-linear-gradient(90deg, var(--bg) 0 14px, transparent 14px 26px); }
+  header { text-align:center; padding:46px 20px 8px; }
+  h1 {
+    font-size: clamp(1.9rem, 5vw, 3.1rem);
+    font-weight: 800;
+    letter-spacing: .1em;
+    color: #f2f5fa;
+    text-shadow: 0 0 30px rgba(77, 107, 254, .45), 0 0 80px rgba(77, 107, 254, .22);
+  }
+  .date { margin-top:12px; color:var(--muted); letter-spacing:.12em; font-size:.95rem; }
+  .count { margin-top:8px; color:#6d7590; font-size:.88rem; }
+  .count b { color:var(--amber); font-size:1.05rem; }
+  .actions2 { margin-top:18px; display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
+  .actions2 button {
+    background:none; border:1px solid rgba(77,107,254,.3); color:var(--amber);
+    border-radius:999px; padding:8px 18px; cursor:pointer; font-size:.85rem; font-family:inherit;
+  }
+  .actions2 button:hover { background:rgba(77,107,254,.12); }
+  .wall {
+    display:flex; flex-wrap:wrap; justify-content:center; align-content:flex-start;
+    align-items:flex-start;
+    gap:26px 22px; max-width:1160px; margin:0 auto; padding:30px 20px 40px;
+  }
+  .card {
+    width:190px; background:var(--paper); color:#2a2c33;
+    border-radius:8px 8px 4px 4px; padding:10px 10px 13px;
+    box-shadow:0 16px 34px rgba(0,0,0,.5);
+    transform:rotate(var(--rot));
+    transition:transform .28s ease;
+  }
+  .card:hover { transform:rotate(0deg) scale(1.05); }
+  .card.memorial { border:2px solid #9aa3b5; }
+  .card .memorial-title {
+    color:#e5484d; font-weight:800; font-size:12px;
+    text-align:center; margin:-2px 0 7px; letter-spacing:.04em;
+  }
+  .photo { position:relative; aspect-ratio:1/1; border-radius:4px; overflow:hidden; background:#dfe5ee; }
+  .photo img { width:100%; height:100%; object-fit:cover; display:block; }
+  .photo .no {
+    position:absolute; top:5px; right:8px;
+    font-family:"SF Mono",ui-monospace,Menlo,monospace; font-size:11px; letter-spacing:1px;
+    color:#c0392b; opacity:.9; text-shadow:0 1px 2px rgba(255,255,255,.6);
+  }
+  .card figcaption { padding:9px 2px 0; text-align:center; }
+  .card .handle { font-weight:800; font-size:14.5px; word-break:break-all; }
+  .card .handle a { color:#2a2c33; text-decoration:none; }
+  .card .handle a:hover { color:#c0392b; }
+  .card .name { color:#8a8f9d; font-size:11.5px; margin-top:1px; word-break:break-all; }
+  .card .msg { margin-top:7px; font-size:12.5px; color:#4a4d57; line-height:1.5; min-height:18px; word-break:break-word; font-style:italic; }
+  .card .time { margin-top:8px; font-family:"SF Mono",ui-monospace,Menlo,monospace; font-size:10.5px; color:#9aa3b5; letter-spacing:1px; }
+  .card .works { margin-top:8px; display:flex; flex-wrap:wrap; gap:4px; justify-content:center; }
+  .card .works a {
+    font-size:9px; background:#f0f2f8; color:#7a8091; border:none;
+    border-radius:999px; padding:2px 8px; text-decoration:none;
+    max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .card .works a:hover { background:#dde4ff; color:#5c4c26; }
+  .card .works-extra { display:none; }
+  .card.open-works .works-extra { display:contents; }
+  .card .works-toggle {
+    width:100%; border:none; background:#eef1ff; color:#4d5fd8;
+    border-radius:6px; padding:3px 0; font-size:9.5px; cursor:pointer; font-family:inherit; margin-top:2px;
+  }
+  .card .works-toggle:hover { background:#dde4ff; }
+
+  .rain { position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+  .rain-item {
+    position:absolute; top:-12vh; white-space:nowrap;
+    color:rgba(245,193,78,.8); font-size:11.5px;
+    text-shadow:0 0 14px rgba(245,193,78,.4);
+    animation:rain-fall var(--dur) linear infinite;
+    animation-delay:var(--delay);
+    pointer-events:auto; cursor:default;
+    will-change:transform;
+  }
+  .rain-item:hover { animation-play-state:paused; color:rgba(255,224,138,.95); }
+  @keyframes rain-fall {
+    0% { transform:translate3d(0,-12vh,0) rotate(var(--tilt)); opacity:0; }
+    6% { opacity:var(--op); }
+    50% { transform:translate3d(var(--sway),46vh,0) rotate(calc(var(--tilt) * -1)); opacity:var(--op); }
+    94% { opacity:var(--op); }
+    100% { transform:translate3d(0,108vh,0) rotate(var(--tilt)); opacity:0; }
+  }
+  header, .wall, footer, .film { position:relative; z-index:1; }
+  .feat-banner {
+    max-width:760px; margin:16px auto 0; padding:8px 16px;
+    background:rgba(77,107,254,.1); border:1px solid rgba(77,107,254,.45);
+    border-radius:999px; text-align:center; color:#99a2b8; font-size:.88rem;
+    position:relative; z-index:1;
+  }
+  .feat-banner b { color:var(--amber); }
+  .card.featured {
+    box-shadow:0 0 0 3px rgba(77,107,254,.85), 0 0 26px rgba(77,107,254,.35), 0 18px 40px rgba(0,0,0,.6);
+    animation:feat-pulse 2.2s ease infinite;
+  }
+  @keyframes feat-pulse {
+    0%,100% { box-shadow:0 0 0 3px rgba(77,107,254,.85), 0 0 22px rgba(77,107,254,.3), 0 18px 40px rgba(0,0,0,.6); }
+    50% { box-shadow:0 0 0 3px rgba(77,107,254,1), 0 0 44px rgba(77,107,254,.65), 0 18px 40px rgba(0,0,0,.6); }
+  }
+  .dense-wall {
+    display:grid; gap:10px; justify-content:center;
+    grid-template-columns:repeat(12, 88px);
+    padding:20px; margin:0 auto; max-width:1240px;
+    position:relative; z-index:1;
+  }
+  .dcell {
+    position:relative; aspect-ratio:1; border-radius:8px; overflow:hidden;
+    cursor:pointer; border:1px solid rgba(255,255,255,.08);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .dcell:hover { transform:scale(1.18); z-index:3; border-color:var(--amber); }
+  .dcell.featured-d { box-shadow:0 0 0 2px var(--amber), 0 0 18px rgba(77,107,254,.65); }
+  .dcell img { width:100%; height:100%; object-fit:cover; display:block; }
+  .dcell .dno {
+    position:absolute; left:3px; bottom:2px; font-family:"SF Mono",ui-monospace,monospace;
+    font-size:8.5px; color:#fff; background:rgba(0,0,0,.55); border-radius:3px; padding:0 4px;
+  }
+  .dcell .dtip {
+    position:absolute; left:50%; bottom:112%; transform:translateX(-50%);
+    background:#141829; border:1px solid #2c3450; color:var(--ink);
+    font-size:11px; padding:6px 10px; border-radius:8px; white-space:nowrap;
+    max-width:230px; overflow:hidden; text-overflow:ellipsis;
+    opacity:0; pointer-events:none; transition:opacity .15s ease;
+    z-index:6;
+  }
+  .dcell:hover .dtip { opacity:1; }
+  @media (max-width:1000px) { .dense-wall { grid-template-columns:repeat(10, 72px); } }
+  @media (max-width:720px) { .dense-wall { grid-template-columns:repeat(8, 58px); gap:7px; } }
+  @media (max-width:480px) { .dense-wall { grid-template-columns:repeat(6, 50px); gap:6px; } }
+
+  .overlay { position:fixed; inset:0; z-index:50; background:rgba(5,7,14,.74); backdrop-filter:blur(6px);
+    display:none; align-items:center; justify-content:center; padding:20px; }
+  .overlay.open { display:flex; }
+  .modal {
+    position:relative; background:#141829; border:1px solid #252c44; border-radius:18px;
+    width:100%; max-width:480px; padding:30px 28px; box-shadow:0 30px 80px rgba(0,0,0,.6);
+    max-height:88vh; overflow-y:auto;
+  }
+  .modal h2 { font-size:1.25rem; margin-bottom:6px; }
+  .modal .sub { color:var(--muted); font-size:.85rem; margin-bottom:16px; }
+  .m-close { position:absolute; top:14px; right:16px; background:none; border:none; color:var(--muted); font-size:1.3rem; cursor:pointer; }
+  .stat-grid { display:flex; flex-wrap:wrap; gap:12px; }
+  .stat-cell { flex:1 1 44%; min-width:150px; background:#0b0e1a; border:1px solid #2c3450; border-radius:12px; padding:14px; }
+  .stat-cell .k { color:#6d7590; font-size:.78rem; margin-bottom:4px; }
+  .stat-cell .v { font-size:1.05rem; font-weight:700; }
+  .stat-cell .v small { color:var(--amber); font-weight:400; }
+  .stat-bar { display:flex; align-items:end; gap:3px; height:60px; margin-top:6px; }
+  .stat-bar i { flex:1; background:#4d6bfe; border-radius:2px 2px 0 0; min-height:2px; position:relative; }
+  .stat-bar i b { position:absolute; top:-16px; left:50%; transform:translateX(-50%); font-size:9px; color:var(--muted); font-weight:400; }
+  .stat-hour { color:#6d7590; font-size:9px; text-align:center; }
+  .replay-frame { min-height:240px; display:flex; align-items:center; justify-content:center; }
+  .replay-item { text-align:center; animation:rise .3s ease both; }
+  .replay-item img { width:110px; height:110px; border-radius:50%; border:3px solid rgba(77,107,254,.6); box-shadow:0 8px 24px rgba(0,0,0,.5); }
+  .ri-no { margin-top:8px; font-family:"SF Mono",ui-monospace,monospace; font-size:11px; color:#c0392b; letter-spacing:2px; }
+  .ri-name { font-weight:800; font-size:1.05rem; margin-top:2px; }
+  .ri-msg { color:var(--muted); font-size:.9rem; margin-top:4px; min-height:20px; }
+  .ri-time { color:var(--amber); font-size:.8rem; margin-top:6px; }
+  .replay-end { font-size:1.1rem; color:var(--amber); text-align:center; animation:rise .5s ease both; }
+  @keyframes rise { from { opacity:0; transform:translateY(14px);} to { opacity:1; transform:none;} }
+
+  footer { text-align:center; color:#5c6478; font-size:.78rem; padding:22px; line-height:1.9; }
+  @media (max-width:520px) { .wall { gap:18px 14px; padding:20px 12px 40px; } .card { width:152px; } }
+   }
+  .grad-text { color: #4d6bfe; font-weight: 700; }
+  .whale-bg { position: fixed; right: -4vw; bottom: -4vh; width: 55vw; max-width: 720px; opacity: .06; pointer-events: none; z-index: 0; }
+  .tools-row { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-top:8px; }
+  .view-btn { border-bottom:2px solid transparent; }
+  .view-btn.active { color:#4d6bfe; font-weight:700; border-bottom:2px solid #4d6bfe; }
+  .ds-float-wrap {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    display: flex; align-items: center; justify-content: center;
+    perspective: 1200px;
+  }
+  .ds-float {
+    width: 58vw; max-width: 720px; min-width: 360px;
+    color: #4d6bfe; opacity: .3;
+    filter: drop-shadow(0 0 90px rgba(77, 107, 254, .75));
+    animation: ds-float3d 14s ease-in-out infinite;
+    transform-style: preserve-3d;
+  }
+  @keyframes ds-float3d {
+    0%, 100% { transform: translateY(-14px) rotateY(-7deg) rotateX(3deg); }
+    25% { transform: translateY(6px) rotateY(2deg) rotateX(-3deg); }
+    50% { transform: translateY(16px) rotateY(8deg) rotateX(-1deg); }
+    75% { transform: translateY(2px) rotateY(-2deg) rotateX(4deg); }
+  }
+  .thanks { position:relative; z-index:1; text-align:center; padding:36px 20px 6px; }
+  .thanks-title { color:#99a2b8; font-size:.9rem; letter-spacing:.12em; margin-bottom:18px; }
+  .thanks-row { display:flex; justify-content:center; gap:18px; flex-wrap:wrap; }
+  .thanks-row img {
+    width:148px; height:197px; object-fit:cover;
+    border-radius:12px; border:2px solid rgba(255,255,255,.14);
+    box-shadow:0 12px 28px rgba(0,0,0,.45);
+    transform:rotate(var(--tr, 0deg));
+    transition:transform .25s ease, box-shadow .25s ease;
+  }
+  .thanks-row img:hover { transform:rotate(0deg) scale(1.07); box-shadow:0 18px 40px rgba(0,0,0,.55); }
+</style>
+</head>
+<body>
+<div class="ds-float-wrap" aria-hidden="true">
+  <div class="ds-float"><svg fill="currentColor" fill-rule="evenodd" height="1em" style="flex:none;line-height:1" viewBox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><title>DeepSeek</title><path d="M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z"></path></svg></div>
+</div>
+
+<svg class="whale-bg" viewBox="0 0 340 200" fill="none" aria-hidden="true">
+  <g fill="#4d6bfe">
+    <ellipse cx="180" cy="110" rx="120" ry="52"/>
+    <path d="M56 110 L26 78 L64 92 Z"/>
+    <path d="M56 110 L26 142 L64 128 Z"/>
+    <path d="M196 150 C188 168 168 174 152 170 C166 160 176 154 196 150 Z"/>
+  </g>
+  <circle cx="248" cy="92" r="5" fill="#0b0d17"/>
+  <path d="M272 126 C244 142 200 150 150 150 C120 150 100 146 86 140" stroke="#0b0d17" stroke-width="4" stroke-linecap="round" opacity=".35"/>
+  <path d="M262 62 C258 44 266 32 278 26 M268 62 C268 46 278 36 290 30" stroke="#4d6bfe" stroke-width="5" stroke-linecap="round"/>
+</svg>
+
+<div class="film"></div>
+<header>
+  <h1>DSH 内测大合影</h1>
+  <p class="date">${ds} · 内测收官 · 感谢每一位同路人</p>
+  <p class="count">共 <b>${members.length}</b> 位内测伙伴入镜 · 本页为永久纪念存档</p>
+    <p class="actions2">
+    <button id="abStats">纪念册</button>
+    <button id="abReplay">时间线回放</button>
+    <button id="abViewPolaroid" class="view-btn active">拍立得墙</button>
+    <button id="abViewDense" class="view-btn">密集合影</button>
+    <button id="abDownload">下载当前视图</button>
+    <button id="abMore">更多</button>
+  </p>
+  <p class="tools-row" id="toolsRow" hidden>
+    <button id="abPoster">大合影海报</button>
+    <button id="abLong">拍立得长图</button>
+  </p>
+</header>
+<div class="feat-banner" id="featBanner" hidden></div>
+<div class="wall">
+${cards}
+</div>
+<div class="dense-wall" id="denseWall" hidden></div>
+<div class="rain" id="rain" aria-hidden="true"></div>
+${thanksImgs.some((s) => s) ? `\n<section class="thanks">\n  <p class="thanks-title">致谢 · 感谢一路同行的可爱灵魂</p>\n  <div class="thanks-row">\n    ${thanksImgs.map((src, i) => (src ? `<img src="${src}" alt="鲸娘 ${i + 1}" loading="lazy" style="--tr:${[-2.2, 1.6, -1.4, 2.4][i]}deg">` : '')).join('\n    ')}\n  </div>\n</section>\n` : ''}\n<footer>这张合影诞生于 DSH 内测收官之夜 · 每位伙伴的 GitHub 主页都可以点击访问</footer>
+<div class="film"></div>
+
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal">
+    <button class="m-close" id="mClose">×</button>
+    <div id="mBody"></div>
+  </div>
+</div>
+
+<script>
+window.ARCHIVE = ${JSON.stringify(dataMembers).replace(/</g, '\\u003c')};
+</script>
+<script>
+(function () {
+  var DATA = window.ARCHIVE || [];
+  var $ = function (s) { return document.querySelector(s); };
+  var esc = function (t) { var d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; };
+  var overlay = $('#overlay'), mBody = $('#mBody');
+  var openModal = function () { overlay.classList.add('open'); };
+  var closeModal = function () { overlay.classList.remove('open'); };
+  $('#mClose').addEventListener('click', closeModal);
+  overlay.addEventListener('click', function (e) { if (e.target === overlay) closeModal(); });
+
+  // 代表作折叠
+  document.querySelectorAll('.works-toggle').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var card = btn.closest('.card');
+      var open = card.classList.toggle('open-works');
+      btn.textContent = open ? '收起 ▴' : '展开全部 ' + card.querySelectorAll('.works a').length + ' 个 ▾';
+    });
+  });
+
+  // 千人千面：?p= 主角
+  (function () {
+    var fp = new URLSearchParams(location.search).get('p');
+    if (!fp) return;
+    var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+    var card = cards.find(function (c) {
+      var h = c.querySelector('.handle');
+      return h && h.textContent.replace(/^@/, '').toLowerCase() === fp.toLowerCase();
+    });
+    if (!card) return;
+    card.classList.add('featured');
+    var wall = card.parentNode;
+    wall.insertBefore(card, wall.firstChild);
+    var b = document.getElementById('featBanner');
+    b.hidden = false;
+    b.innerHTML = '这是 <b class="grad-text">@' + esc(fp) + '</b> 分享的合影';
+    setTimeout(function () { card.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300);
+  })();
+
+  // 留言雨背景
+  (function () {
+    var box = $('#rain');
+    if (!box) return;
+    var items = DATA.filter(function (m) { return m.message; }).slice(0, 28);
+    items.forEach(function (m) {
+      var s = document.createElement('span');
+      s.className = 'rain-item';
+      s.textContent = '@' + m.login + '：' + m.message;
+      s.style.left = (Math.random() * 100) + 'vw';
+      s.style.setProperty('--dur', (26 + Math.random() * 30).toFixed(1) + 's');
+      s.style.setProperty('--delay', (-Math.random() * 34).toFixed(1) + 's');
+      s.style.setProperty('--sway', ((Math.random() - .5) * 180).toFixed(0) + 'px');
+      s.style.setProperty('--tilt', ((Math.random() - .5) * 12).toFixed(1) + 'deg');
+      s.style.setProperty('--op', (.26 + Math.random() * .20).toFixed(2));
+      box.appendChild(s);
+    });
+  })();
+
+  // 工具
+  var loadImg = function (src) {
+    return new Promise(function (resolve) {
+      var img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = function () { resolve(img); };
+      img.onerror = function () { resolve(null); };
+      img.src = src;
+    });
+  };
+  var downloadCanvas = function (cv, name) {
+    var a = document.createElement('a');
+    a.download = name; a.href = cv.toDataURL('image/png'); a.click();
+  };
+  var rr = function (ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    if (ctx.roundRect) { ctx.roundRect(x, y, w, h, r); return; }
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  };
+  var ellipsize = function (ctx, text, maxW) {
+    if (ctx.measureText(text).width <= maxW) return text;
+    var arr = Array.from(text);
+    while (arr.length && ctx.measureText(arr.join('') + '…').width > maxW) arr.pop();
+    return arr.join('') + '…';
+  };
+  var wrapLines = function (ctx, text, maxW, maxLines) {
+    var lines = [], line = '';
+    for (var i = 0; i < Array.from(text).length; i++) {
+      var ch = Array.from(text)[i];
+      if (ctx.measureText(line + ch).width > maxW && line) {
+        lines.push(line); line = ch;
+        if (lines.length === maxLines) break;
+      } else line += ch;
+    }
+    if (line && lines.length < maxLines) lines.push(line);
+    if (lines.length === maxLines) {
+      var joined = lines.join('').replace(/…$/, '');
+      if (joined.length < Array.from(text).length) lines[maxLines - 1] = lines[maxLines - 1].replace(/…?$/, '…');
+    }
+    return lines;
+  };
+
+  // 纪念册
+  $('#abStats').addEventListener('click', function () {
+    var ms = DATA;
+    if (!ms.length) return;
+    var withMsg = ms.filter(function (m) { return m.message; });
+    var chars = withMsg.reduce(function (s, m) { return s + m.message.length; }, 0);
+    var hours = {};
+    ms.forEach(function (m) { var h = new Date(m.joinedAt).getHours(); hours[h] = (hours[h] || 0) + 1; });
+    var entries = Object.keys(hours).map(Number).sort(function (a, b) { return a - b; })
+      .map(function (h) { return [h, hours[h]]; });
+    var peak = entries.reduce(function (a, b) { return b[1] > a[1] ? b : a; }, [0, 0]);
+    var maxC = Math.max.apply(null, entries.map(function (e) { return e[1]; }).concat([1]));
+    var bars = entries.map(function (e) {
+      return '<i style="height:' + Math.max(Math.round(e[1] / maxC * 60), 3) + 'px"><b>' + e[1] + '</b></i>';
+    }).join('');
+    var labels = entries.map(function (e) { return '<span class="stat-hour">' + e[0] + '时</span>'; }).join('');
+    var first = ms[0], last = ms[ms.length - 1];
+    var longest = withMsg.slice().sort(function (a, b) { return b.message.length - a.message.length; })[0];
+    var withWorks = ms.filter(function (m) { return m.works && m.works.length; }).length;
+    mBody.innerHTML =
+      '<h2>收官纪念册</h2><p class="sub">这一夜，我们留下了这些数字</p>' +
+      '<div class="stat-grid">' +
+      '<div class="stat-cell"><div class="k">入镜伙伴</div><div class="v">' + ms.length + ' 人</div></div>' +
+      '<div class="stat-cell"><div class="k">留言</div><div class="v">' + withMsg.length + ' 条 <small>共 ' + chars + ' 字</small></div></div>' +
+      '<div class="stat-cell"><div class="k">挂代表作的</div><div class="v">' + withWorks + ' 人</div></div>' +
+      '<div class="stat-cell"><div class="k">第一位入镜</div><div class="v">@' + esc(first.login) + ' <small>第 1 位</small></div></div>' +
+      '<div class="stat-cell"><div class="k">最新入镜</div><div class="v">@' + esc(last.login) + ' <small>第 ' + last.order + ' 位</small></div></div>' +
+      '<div class="stat-cell"><div class="k">最长留言</div><div class="v">@' + esc(longest.login) + ' <small>' + longest.message.length + ' 字</small></div></div>' +
+      '</div>' +
+      '<p class="sub" style="margin-top:18px">入镜时段分布 · 最热闹是 ' + peak[0] + ' 时（' + peak[1] + ' 人）</p>' +
+      '<div class="stat-bar">' + bars + '</div>' +
+      '<div style="display:flex;gap:3px">' + labels + '</div>';
+    openModal();
+  });
+
+  // 时间线回放
+  $('#abReplay').addEventListener('click', function () {
+    if (!DATA.length) return;
+    openModal();
+    mBody.innerHTML = '<h2>入镜时间线</h2><p class="sub">这一夜，我们如何一个个聚齐</p><div class="replay-frame" id="replayFrame"></div>';
+    var frame = $('#replayFrame');
+    var i = 0;
+    var step = function () {
+      if (!overlay.classList.contains('open')) return;
+      if (i >= DATA.length) {
+        frame.innerHTML = '<div class="replay-end">全剧终 · 感谢 ' + DATA.length + ' 位伙伴，晚安 DSH</div>';
+        return;
+      }
+      var m = DATA[i];
+      var t = new Date(m.joinedAt);
+      var hh = String(t.getHours()).padStart(2, '0');
+      var mm = String(t.getMinutes()).padStart(2, '0');
+      frame.innerHTML =
+        '<div class="replay-item"><img src="' + esc(m.avatar || '') + (m.avatar ? '&s=200' : '') + '" alt="">' +
+        '<div class="ri-no">#' + m.ghId + '</div>' +
+        '<div class="ri-name">@' + esc(m.login) + '</div>' +
+        '<div class="ri-msg">' + (m.message ? '“' + esc(m.message) + '”' : '') + '</div>' +
+        '<div class="ri-time">' + hh + ':' + mm + ' 入镜</div></div>';
+      i++;
+      setTimeout(step, 430);
+    };
+    step();
+  });
+
+  // 大合影海报
+  $('#abPoster').addEventListener('click', function () {
+    var ms = DATA;
+    if (!ms.length) return;
+    var cols = ms.length <= 48 ? 8 : (ms.length <= 100 ? 10 : 12);
+    var cell = 118, pad = 14;
+    var rows = Math.ceil(ms.length / cols);
+    var W = pad * 2 + cols * (cell + pad);
+    var H = 130 + rows * (cell + pad) + pad;
+    var cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    var ctx = cv.getContext('2d');
+    ctx.fillStyle = '#0b0d17'; ctx.fillRect(0, 0, W, H);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#4d6bfe';
+    ctx.font = '800 36px -apple-system, "PingFang SC", "Segoe UI", sans-serif';
+    ctx.fillText('DSH 内测大合影', W / 2, 58);
+    ctx.fillStyle = '#99a2b8';
+    ctx.font = '15px -apple-system, "PingFang SC", sans-serif';
+    ctx.fillText('内测收官 · 共 ' + ms.length + ' 位伙伴', W / 2, 84);
+    ctx.font = '11px ui-monospace, Menlo, monospace';
+    ctx.fillText('github.com/dsh-external/dsh-group-photo', W / 2, 104);
+    Promise.all(ms.map(function (m) { return loadImg((m.avatar || '') + (m.avatar ? '&s=200' : '')); })).then(function (imgs) {
+      ms.forEach(function (m, i) {
+        var x = pad + (i % cols) * (cell + pad);
+        var y = 130 + Math.floor(i / cols) * (cell + pad);
+        ctx.fillStyle = '#f2f5fa';
+        rr(ctx, x, y, cell, cell, 6); ctx.fill();
+        if (imgs[i]) ctx.drawImage(imgs[i], x + 5, y + 5, cell - 10, cell - 10);
+        ctx.fillStyle = '#c0392b';
+        ctx.font = 'bold 11px ui-monospace, Menlo, monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText('#' + m.ghId, x + 6, y + cell + 15);
+      });
+      downloadCanvas(cv, 'dsh-neice-daheying.png');
+    });
+  });
+
+  // 密集合影墙
+  (function () {
+    var dw = document.getElementById('denseWall');
+    var fp = new URLSearchParams(location.search).get('p') || '';
+    DATA.forEach(function (m) {
+      var cell = document.createElement('div');
+      cell.className = 'dcell';
+      if (String(m.login).toLowerCase() === fp.toLowerCase()) cell.classList.add('featured-d');
+      cell.innerHTML =
+        '<img loading="lazy" src="' + esc(m.avatar || '') + (m.avatar ? '&s=200' : '') + '" alt="' + esc(m.login) + '">' +
+        '<span class="dno">#' + m.ghId + '</span>' +
+        '<div class="dtip"><b>@' + esc(m.login) + '</b>' + (m.message ? '：' + esc(m.message) : '') + '</div>';
+      cell.addEventListener('click', function () {
+        var t = new Date(m.joinedAt);
+        var hh = String(t.getHours()).padStart(2, '0');
+        var mm = String(t.getMinutes()).padStart(2, '0');
+        var w = m.works || [];
+        mBody.innerHTML =
+          '<div style="text-align:center">' +
+          '<img src="' + esc(m.avatar || '') + '&s=200" alt="" style="width:96px;height:96px;border-radius:50%;border:3px solid rgba(77,107,254,.6);box-shadow:0 8px 24px rgba(0,0,0,.5)">' +
+          '<h2 style="margin-top:10px">@' + esc(m.login) + '</h2>' +
+          '<p class="sub">' + esc(m.name || '') + ' · 第 ' + m.order + ' 位入镜 · ' + hh + ':' + mm + '</p>' +
+          (m.message ? '<p style="color:var(--muted);line-height:1.8;margin:8px 0">“' + esc(m.message) + '”</p>' : '') +
+          (w.length ? '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:10px 0">' +
+            w.slice(0, 6).map(function (r) { return '<a href="https://github.com/dsh-external/' + esc(r) + '" target="_blank" rel="noopener" style="background:rgba(77,107,254,.1);border:1px solid rgba(77,107,254,.35);color:var(--amber);border-radius:999px;padding:3px 10px;font-size:11px;text-decoration:none">' + esc(r) + '</a>'; }).join('') +
+            '</div>' : '') +
+          '<p style="margin-top:10px"><a href="https://github.com/' + esc(m.login) + '" target="_blank" rel="noopener" style="color:var(--amber)">去 ta 的 GitHub →</a></p>' +
+          '</div>';
+        openModal();
+      });
+      dw.appendChild(cell);
+    });
+    var view = 'polaroid';
+    function setView(v) {
+      view = v;
+      document.getElementById('abViewPolaroid').classList.toggle('active', v === 'polaroid');
+      document.getElementById('abViewDense').classList.toggle('active', v === 'dense');
+      var dense = v === 'dense';
+      document.querySelector('.wall').style.display = dense ? 'none' : '';
+      document.getElementById('denseWall').hidden = !dense;
+    }
+    document.getElementById('abViewPolaroid').addEventListener('click', function () { setView('polaroid'); });
+    document.getElementById('abViewDense').addEventListener('click', function () { setView('dense'); });
+    document.getElementById('abMore').addEventListener('click', function () {
+      var r = document.getElementById('toolsRow');
+      r.hidden = !r.hidden;
+      document.getElementById('abMore').textContent = r.hidden ? '更多' : '收起';
+    });
+  })();
+
+  // 全页长图导出
+  function renderLongImage() {
+    var ms = DATA;
+    if (!ms.length) return;
+    var cardW = 190, cardH = 320, gap = 20, margin = 24;
+    var cols = 6;
+    var rows = Math.ceil(ms.length / cols);
+    var W = margin * 2 + cols * cardW + (cols - 1) * gap;
+    var headerH = 120, footerH = 70;
+    var H = headerH + rows * (cardH + gap) + footerH;
+    var cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    var ctx = cv.getContext('2d');
+    ctx.fillStyle = '#0b0d17'; ctx.fillRect(0, 0, W, H);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#4d6bfe';
+    ctx.font = '800 34px -apple-system, "PingFang SC", sans-serif';
+    ctx.fillText('DSH 内测大合影', W / 2, 48);
+    ctx.fillStyle = '#99a2b8';
+    ctx.font = '14px -apple-system, "PingFang SC", sans-serif';
+    ctx.fillText('内测收官 · 共 ' + ms.length + ' 位伙伴', W / 2, 72);
+    ctx.font = '11px ui-monospace, Menlo, monospace';
+    ctx.fillText('github.com/dsh-external/dsh-group-photo', W / 2, 92);
+    Promise.all(ms.map(function (m) { return loadImg((m.avatar || '') + '&s=460'); })).then(function (imgs) {
+      ms.forEach(function (m, i) {
+        var cx = margin + (i % cols) * (cardW + gap);
+        var cy = headerH + Math.floor(i / cols) * (cardH + gap);
+        var rot = ((((m.ghId || 0) % 5) - 2) * 1.4) * Math.PI / 180;
+        ctx.save();
+        ctx.translate(cx + cardW / 2, cy + cardH / 2);
+        ctx.rotate(rot);
+        ctx.translate(-(cx + cardW / 2), -(cy + cardH / 2));
+        ctx.fillStyle = '#f2f5fa';
+        rr(ctx, cx, cy, cardW, cardH, 8); ctx.fill();
+        var as = cardW - 20;
+        ctx.fillStyle = '#dfe5ee';
+        rr(ctx, cx + 10, cy + 10, as, as, 4); ctx.fill();
+        if (imgs[i]) ctx.drawImage(imgs[i], cx + 10, cy + 10, as, as);
+        ctx.fillStyle = '#c0392b';
+        ctx.font = 'bold 11px ui-monospace, Menlo, monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText('#' + m.ghId, cx + 12, cy + 10 + as + 14);
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#2a2c33';
+        ctx.font = '800 14px -apple-system, "PingFang SC", sans-serif';
+        ctx.fillText(ellipsize(ctx, '@' + m.login, cardW - 16), cx + cardW / 2, cy + 10 + as + 34);
+        ctx.fillStyle = '#8a8f9d';
+        ctx.font = '11px -apple-system, "PingFang SC", sans-serif';
+        ctx.fillText(ellipsize(ctx, m.name || '', cardW - 16), cx + cardW / 2, cy + 10 + as + 50);
+        ctx.fillStyle = '#4a4d57';
+        ctx.font = 'italic 12px -apple-system, "PingFang SC", sans-serif';
+        var my = cy + 10 + as + 72;
+        if (m.message) {
+          wrapLines(ctx, '“' + m.message + '”', cardW - 16, 2).forEach(function (ln) { ctx.fillText(ln, cx + cardW / 2, my); my += 16; });
+        }
+        var w = (m.works || []).slice(0, 4);
+        var more = (m.works || []).length > 4 ? ' +' + ((m.works || []).length - 4) : '';
+        ctx.fillStyle = '#4d5fd8';
+        ctx.font = '10px ui-monospace, Menlo, monospace';
+        ctx.fillText(ellipsize(ctx, (w.length ? '' + w.join(' · ') : '') + more, cardW - 16), cx + cardW / 2, cy + cardH - 22);
+        var t = new Date(m.joinedAt);
+        var hh = String(t.getHours()).padStart(2, '0');
+        var mm = String(t.getMinutes()).padStart(2, '0');
+        ctx.fillStyle = '#9aa3b5';
+        ctx.font = '10px ui-monospace, Menlo, monospace';
+        ctx.fillText(hh + ':' + mm, cx + cardW / 2, cy + cardH - 8);
+        ctx.restore();
+      });
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#5c6478';
+      ctx.font = '12px -apple-system, "PingFang SC", sans-serif';
+      ctx.fillText('这张合影诞生于 DSH 内测收官之夜 · 每一位伙伴都可点击头像找到主页', W / 2, H - 34);
+      downloadCanvas(cv, 'dsh-daheying-changtu.png');
+    });
+  }
+  $('#abLong').addEventListener('click', renderLongImage);
+
+  function downloadDenseWall() {
+    var ms = DATA;
+    var cols = 12, cell = 92, gap = 10, pad = 20;
+    var rows = Math.ceil(ms.length / cols);
+    var W = pad * 2 + cols * cell + (cols - 1) * gap;
+    var H = 110 + rows * (cell + gap) + pad;
+    var cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    var ctx = cv.getContext('2d');
+    ctx.fillStyle = '#0b0d17'; ctx.fillRect(0, 0, W, H);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#4d6bfe';
+    ctx.font = '800 30px -apple-system, "PingFang SC", sans-serif';
+    ctx.fillText('DSH 内测大合影 · 密集合影', W / 2, 44);
+    ctx.fillStyle = '#99a2b8';
+    ctx.font = '13px -apple-system, "PingFang SC", sans-serif';
+    ctx.fillText('共 ' + ms.length + ' 位伙伴', W / 2, 68);
+    ctx.font = '10px ui-monospace, Menlo, monospace';
+    ctx.fillText('github.com/dsh-external/dsh-group-photo', W / 2, 86);
+    Promise.all(ms.map(function (m) { return loadImg((m.avatar || '') + '&s=200'); })).then(function (imgs) {
+      ms.forEach(function (m, i) {
+        var x = pad + (i % cols) * (cell + gap);
+        var y = 110 + Math.floor(i / cols) * (cell + gap);
+        ctx.save();
+        rr(ctx, x, y, cell, cell, 8);
+        ctx.clip();
+        if (imgs[i]) ctx.drawImage(imgs[i], x, y, cell, cell);
+        ctx.restore();
+        ctx.fillStyle = 'rgba(0,0,0,.55)';
+        rr(ctx, x, y + cell - 16, cell, 16, 4); ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 10px ui-monospace, Menlo, monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText('#' + m.ghId, x + 6, y + cell - 5);
+      });
+      downloadCanvas(cv, 'dsh-miji-heying.png');
+    });
+  }
+
+  document.getElementById('abDownload').addEventListener('click', function () {
+    if (!DATA.length) return;
+    if (view === 'dense') downloadDenseWall();
+    else renderLongImage();
+  });
+})();
+</script>
+</body>
+</html>
+`;
+
+const outDir = path.join(ROOT, 'archive');
+fs.mkdirSync(outDir, { recursive: true });
+fs.writeFileSync(path.join(outDir, 'index.html'), html);
+console.log('成功导出 ' + members.length + ' 位成员 → archive/index.html（含纪念册/回放/海报/胶卷条）');

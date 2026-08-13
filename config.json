@@ -1,0 +1,11 @@
+{
+  "port": 8808,
+  "clientId": "",
+  "clientSecret": "",
+  "org": "dsh-external",
+  "pat": "",
+  "dataFile": "members.json",
+  "sessionsFile": "sessions.json",
+  "whitelistFile": "whitelist.json",
+  "worksFile": "works.json"
+}

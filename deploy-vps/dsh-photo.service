@@ -1,0 +1,17 @@
+# 放到 /etc/systemd/system/dsh-photo.service
+[Unit]
+Description=DSH Group Photo
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/dsh-photo
+Environment=GH_CLIENT_ID=填你的ClientID
+Environment=GH_CLIENT_SECRET=填你的ClientSecret
+Environment=GH_ORG=dsh-external
+Environment=PORT=8808
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

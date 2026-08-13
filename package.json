@@ -1,0 +1,8 @@
+{
+  "name": "dsh-group-photo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DSH 内测收官合影墙：GitHub OAuth 登录 + 冻结白名单校验的拍立得合影站",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=20" }
+}

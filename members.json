@@ -1,0 +1,29 @@
+[
+  {
+    "ghId": 101,
+    "login": "alice-demo",
+    "name": "爱丽丝（演示）",
+    "avatar": "https://i.pravatar.cc/150?img=5",
+    "message": "内测三个月，DSH 越来越懂我了 ✌️",
+    "order": 1,
+    "joinedAt": "2026-08-12T12:00:00.000Z"
+  },
+  {
+    "ghId": 102,
+    "login": "bob-demo",
+    "name": "鲍勃（演示）",
+    "avatar": "https://i.pravatar.cc/150?img=12",
+    "message": "跟大佬们一起熬夜的日子，值了",
+    "order": 2,
+    "joinedAt": "2026-08-12T12:05:00.000Z"
+  },
+  {
+    "ghId": 103,
+    "login": "carol-demo",
+    "name": "卡罗尔（演示）",
+    "avatar": "https://i.pravatar.cc/150?img=32",
+    "message": "",
+    "order": 3,
+    "joinedAt": "2026-08-12T12:10:00.000Z"
+  }
+]

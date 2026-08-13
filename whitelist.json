@@ -1,0 +1,19 @@
+{
+  "org": "dsh-external",
+  "frozenAt": "2026-08-12T17:19:40.178Z",
+  "count": 3,
+  "members": [
+    {
+      "id": 101,
+      "login": "alice-demo"
+    },
+    {
+      "id": 102,
+      "login": "bob-demo"
+    },
+    {
+      "id": 103,
+      "login": "carol-demo"
+    }
+  ]
+}
