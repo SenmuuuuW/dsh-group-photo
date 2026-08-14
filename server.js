@@ -311,10 +311,9 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // 合影数据：仅内测成员可看
+    // 合影数据：公开可看（点赞/评论数一并公开；liked 仅登录成员可见自己的状态）
     if (req.method === 'GET' && p === '/api/members') {
       const u = sessionUser(req);
-      if (!u) { json(res, 401, { error: 'unauthorized' }); return; }
       loadWorks();
       const list = members.slice().sort((a, b) => (a.order || 0) - (b.order || 0)).map((m) => {
         const w = works.map.get(String(m.login).toLowerCase()) || [];
@@ -323,7 +322,7 @@ const server = http.createServer(async (req, res) => {
         const entry = {
           ...m,
           likes: likes.length,
-          liked: likes.includes(u.login),
+          liked: u ? likes.includes(u.login) : false,
           comments,
         };
         if (w.length) entry.works = w;
@@ -345,18 +344,31 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // 点赞（toggle）
+    // 点赞（toggle）：内测成员按账号，游客按匿名设备 ID（限流）
     if (req.method === 'POST' && p === '/api/like') {
       const u = sessionUser(req);
-      if (!u) { json(res, 401, { error: 'unauthorized' }); return; }
       const body = await readBody(req).catch(() => '{}');
-      let ghId = null;
-      try { ghId = Number(JSON.parse(body).ghId); } catch {}
+      let ghId = null, anonId = '';
+      try { const b = JSON.parse(body); ghId = Number(b.ghId); anonId = String(b.anonId || '').slice(0, 64); } catch {}
       const target = members.find((m) => m.ghId === ghId);
       if (!target) { json(res, 404, { error: 'no_member' }); return; }
       const list = social.likes[ghId] || (social.likes[ghId] = []);
-      const idx = list.indexOf(u.login);
-      if (idx >= 0) list.splice(idx, 1); else list.push(u.login);
+      if (u) {
+        const idx = list.indexOf(u.login);
+        if (idx >= 0) list.splice(idx, 1); else list.push(u.login);
+        saveSocial();
+        json(res, 200, { ok: true, likes: list.length, liked: idx < 0 });
+        return;
+      }
+      if (!anonId) { json(res, 400, { error: 'no_identity' }); return; }
+      if (!social.anonLikes) social.anonLikes = {};
+      const now = Date.now();
+      const stamps = (social.anonLikes[anonId] || []).filter((ts) => now - ts < 3600000);
+      if (stamps.length >= 60) { json(res, 429, { error: 'rate_limited' }); return; }
+      const key = 'anon:' + anonId;
+      const idx = list.indexOf(key);
+      if (idx >= 0) list.splice(idx, 1); else { list.push(key); stamps.push(now); }
+      social.anonLikes[anonId] = stamps;
       saveSocial();
       json(res, 200, { ok: true, likes: list.length, liked: idx < 0 });
       return;

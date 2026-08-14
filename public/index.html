@@ -556,6 +556,13 @@
   'use strict';
   const $ = (s) => document.querySelector(s);
   const state = { me: null, members: [], modalOpen: false, featured: '', selfPin: true, view: 'polaroid' };
+  let anonId = '';
+  try {
+    anonId = localStorage.getItem('anonId');
+    if (!anonId) { anonId = crypto.randomUUID(); localStorage.setItem('anonId', anonId); }
+  } catch { anonId = 'anon-' + Math.random().toString(36).slice(2); }
+  let anonLiked = new Set();
+  try { anonLiked = new Set(JSON.parse(localStorage.getItem('anonLiked') || '[]')); } catch {}
   try { state.selfPin = localStorage.getItem('pinSelf') !== 'off'; } catch {}
 
   const esc = (t) => {
@@ -586,7 +593,7 @@
     const box = $('#actions');
     const me = state.me;
     if (!me || !me.loggedIn) {
-      box.innerHTML = '<button class="btn btn-primary" id="joinBtn">登录 GitHub · 一起入镜</button>';
+      box.innerHTML = '<button class="btn btn-primary" id="joinBtn">内测成员 · 登录入镜</button>';
       $('#joinBtn').addEventListener('click', startLogin);
       return;
     }
@@ -898,11 +905,15 @@
       '</div>' +
       '<h3 style="margin-top:18px;font-size:.95rem;color:var(--muted);text-align:left">评论（' + cs.length + '）</h3>' +
       '<div id="cmtList" style="max-height:220px;overflow-y:auto;margin-top:8px">' + cmtList + '</div>' +
-      '<textarea id="cmtInput" maxlength="140" placeholder="给 @' + esc(m.login) + ' 留句话…" style="width:100%;margin-top:10px;background:#0b0e1a;border:1px solid #2c3450;border-radius:12px;color:var(--ink);font-family:inherit;font-size:.9rem;padding:10px 12px;min-height:56px;resize:vertical"></textarea>' +
-      '<div class="row"><button class="btn btn-ghost" id="mClose2">关闭</button><button class="btn btn-primary" id="cmtSubmit">发送评论</button></div>' +
+      ((state.me && state.me.loggedIn)
+        ? '<textarea id="cmtInput" maxlength="140" placeholder="给 @' + esc(m.login) + ' 留句话…" style="width:100%;margin-top:10px;background:#0b0e1a;border:1px solid #2c3450;border-radius:12px;color:var(--ink);font-family:inherit;font-size:.9rem;padding:10px 12px;min-height:56px;resize:vertical"></textarea>' +
+          '<div class="row"><button class="btn btn-ghost" id="mClose2">关闭</button><button class="btn btn-primary" id="cmtSubmit">发送评论</button></div>'
+        : '<p style="text-align:center;color:#6d7590;font-size:.85rem;margin-top:10px">内测成员登录后可评论</p>' +
+          '<div class="row"><button class="btn btn-ghost" id="mClose2">关闭</button></div>') +
       '</div>';
     $('#mClose2').addEventListener('click', closeModal);
-    $('#cmtList').addEventListener('click', async (e) => {
+    const cmtListEl = $('#cmtList');
+    if (cmtListEl) cmtListEl.addEventListener('click', async (e) => {
       const del = e.target.closest('.cmt-del');
       if (!del) return;
       const r = await api('/api/comment/delete', {
@@ -936,8 +947,10 @@
         if (nm) { nm.comments = r.comments; openMemberModal(nm); }
       }
     };
-    $('#cmtSubmit').addEventListener('click', doSubmit);
-    $('#cmtInput').addEventListener('keydown', (e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') doSubmit(); });
+    const submitBtn = $('#cmtSubmit');
+    if (submitBtn) submitBtn.addEventListener('click', doSubmit);
+    const cmtTa = $('#cmtInput');
+    if (cmtTa) cmtTa.addEventListener('keydown', (e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') doSubmit(); });
   }
 
 
@@ -1184,7 +1197,7 @@
     fig.dataset.works = JSON.stringify(m.works || []);
     fig.dataset.social = JSON.stringify([m.likes || 0, m.liked || false, (m.comments || []).length]);
     const socialHtml = '<div class="social">' +
-      '<button class="soc-btn like' + (m.liked ? ' liked' : '') + '" title="点赞">' + (m.liked ? '已赞' : '赞') + ' <b>' + (m.likes || 0) + '</b></button>' +
+      '<button class="soc-btn like' + ((m.liked || anonLiked.has(m.ghId)) ? ' liked' : '') + '" title="点赞">' + ((m.liked || anonLiked.has(m.ghId)) ? '已赞' : '赞') + ' <b>' + (m.likes || 0) + '</b></button>' +
       '<button class="soc-btn cmt" title="评论">评论 <b>' + ((m.comments || []).length) + '</b></button>' +
       '</div>';
     fig.innerHTML =
@@ -1227,10 +1240,10 @@
     }
     const banner = $('#featBanner');
     if (banner) {
-      if (state.me && state.me.loggedIn && featuredMember) {
+      if (featuredMember) {
         banner.hidden = false;
         banner.innerHTML = '这是 <b class="grad-text">@' + esc(featuredMember.login) + '</b> 分享的合影 · ta 是第 ' + featuredMember.order + ' 位入镜的伙伴';
-      } else if (state.me && state.me.loggedIn && selfPinnedMember) {
+      } else if (selfPinnedMember) {
         banner.hidden = false;
         banner.innerHTML = '<b class="grad-text">你</b> 在 C 位 · 第 ' + selfPinnedMember.order + ' 位入镜 · 此置顶仅你自己可见';
       } else {
@@ -1238,7 +1251,7 @@
       }
     }
     $('#count').textContent = state.members.length;
-    empty.hidden = !(state.me && state.me.loggedIn) || state.members.length > 0;
+    empty.hidden = state.members.length > 0;
     if (!animate) {
       wall.innerHTML = '';
       list.forEach((m) => wall.appendChild(cardNode(m)));
@@ -1294,11 +1307,11 @@
   }
 
   function updateLocked() {
-    const logged = !!(state.me && state.me.loggedIn);
-    $('#locked').hidden = logged;
-    $('#statsBar').style.display = logged ? '' : 'none';
-    $('#rain').hidden = !logged;
-    $('#denseWall').hidden = !logged || state.view !== 'dense';
+    // 公开模式：所有人可看；入镜/评论仍仅限白名单成员
+    $('#locked').hidden = true;
+    $('#statsBar').style.display = '';
+    $('#rain').hidden = false;
+    $('#denseWall').hidden = state.view !== 'dense';
     $('#count2').textContent = (state.me && state.me.count) || 0;
   }
 
@@ -1307,10 +1320,8 @@
     const before = state.members.length;
     state.me = me;
     state.members = [];
-    if (me.loggedIn) {
-      const mem = await api('/api/members');
-      if (mem.members) state.members = mem.members;
-    }
+    const mem = await api('/api/members');
+    if (mem.members) state.members = mem.members;
     if (me.org) {
       const href = 'https://github.com/' + me.org;
       ['orgLink', 'orgLink2'].forEach((id) => {
@@ -1424,15 +1435,20 @@
   }
 
   async function toggleLike(ghId) {
+    const logged = !!(state.me && state.me.loggedIn);
     const r = await api('/api/like', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ghId }),
+      body: JSON.stringify(logged ? { ghId } : { ghId, anonId }),
     });
-    if (r.error === 'unauthorized') { toast('登录状态已过期，请重新登录'); return; }
+    if (r.error === 'rate_limited') { toast('操作太频繁，歇一会儿再点'); return; }
     if (r.ok !== true) return;
     const m = state.members.find((x) => x.ghId === ghId);
-    if (m) { m.likes = r.likes; m.liked = r.liked; }
+    if (m) { m.likes = r.likes; m.liked = logged ? r.liked : false; }
+    if (!logged) {
+      if (r.liked) anonLiked.add(ghId); else anonLiked.delete(ghId);
+      try { localStorage.setItem('anonLiked', JSON.stringify([...anonLiked])); } catch {}
+    }
     const card = document.querySelector('#wall .card[data-id="' + ghId + '"]');
     if (card) card.replaceWith(cardNode(m));
     if (r.liked) {
@@ -1501,7 +1517,7 @@
   (function () {
     const d = new Date();
     const ds = d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0');
-    $('#dateLine').textContent = ds + ' · 内测收官 · 仅限 dsh-external 组织成员';
+    $('#dateLine').textContent = ds + ' · 内测收官 · 浏览开放 · 入镜与评论仅限内测成员';
     document.title = 'DSH 内测大合影 · ' + ds;
   })();
   // 登录回调返回的错误提示 + 千人千面主角参数
@@ -1515,7 +1531,7 @@
   updateRainUI();
   refreshAll();
   setInterval(() => {
-    if (!state.me || !state.me.loggedIn) return;
+
     api('/api/members').then((mem) => {
       if (mem.error === 'unauthorized') { refreshAll(); return; }
       const before = state.members.length;
