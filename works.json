@@ -1,8 +1,463 @@
 {
-  "alice-demo": [
-    "demo-plugin-a"
+  "proton1917": [
+    "dsh-live-stats"
   ],
-  "bob-demo": [
-    "demo-plugin-b"
+  "vlln": [
+    "deep-standard-skill",
+    "dsh-mega",
+    "dsh-session-repair-skill",
+    "dsh-subagent-tree",
+    "vlln/dsh-loop",
+    "vlln/dsh-navbar",
+    "vlln/dsh-task-status",
+    "vlln/whale-girl"
+  ],
+  "xytoki": [
+    "dsh-opencode-server"
+  ],
+  "mattheliu": [
+    "dsh-skins",
+    "oh-my-dsh-distribution",
+    "session-teleport"
+  ],
+  "echovic": [
+    "review-panel",
+    "tg-bot"
+  ],
+  "ayuanwong": [
+    "group-chat-diary"
+  ],
+  "csyangwen": [
+    "csyangwen/dsh-memory-evolve",
+    "dsh-feishu-bot",
+    "dsh-mobileweb-adapter",
+    "dsh-wecom-bot",
+    "dsh-weixin-bot",
+    "qqbot"
+  ],
+  "loserfox": [
+    "dsh-pty-windows",
+    "dsh-shell-windows",
+    "dsh-win-port",
+    "loserfox/distill",
+    "loserfox/dsh-gal",
+    "loserfox/dsh-git-identity",
+    "loserfox/telegram",
+    "marisa",
+    "session-chatlog"
+  ],
+  "hanlinxuy": [
+    "dsh-my-rsi"
+  ],
+  "morlay": [
+    "deepseek-harness-distro",
+    "morlay/session-persistence-rdb",
+    "zephyr"
+  ],
+  "whiteicey": [
+    "whiteicey/dsh-plugin-check",
+    "whiteicey/dsh-plugin-dev",
+    "whiteicey/dsh-security-audit",
+    "whiteicey/dsh-session-health",
+    "whiteicey/dsh-tool-calculator",
+    "whiteicey/dsh-tool-csv",
+    "whiteicey/dsh-tool-diff",
+    "whiteicey/dsh-tool-encoding",
+    "whiteicey/dsh-tool-json",
+    "whiteicey/dsh-tool-markdown",
+    "whiteicey/dsh-tool-regex",
+    "whiteicey/dsh-tool-schema",
+    "whiteicey/dsh-tool-stat",
+    "whiteicey/dsh-tool-time",
+    "whiteicey/dsh-toolkit"
+  ],
+  "jack-the-builder": [
+    "dshx-update-check"
+  ],
+  "kaaanata": [
+    "dsh-acp"
+  ],
+  "shenjackyuanjie": [
+    "ds_web_craw",
+    "dsh-cot-summary",
+    "dsh-ica",
+    "dsh-public-repo-monitor",
+    "dsh-sfw",
+    "shenjackyuanjie/dsh-ohos-patch"
+  ],
+  "william-jin-cmu": [
+    "william-jin-cmu/dsh-artifact",
+    "william-jin-cmu/dsh-companion",
+    "william-jin-cmu/dsh-evolve",
+    "william-jin-cmu/dsh-stickers",
+    "william-jin-cmu/dsh-vision"
+  ],
+  "bill9109": [
+    "bill9109/dsh-101",
+    "bill9109/dsh-conversation-share",
+    "bill9109/dsh-drag-and-drop",
+    "bill9109/dsh-web-ui-notify",
+    "bill9109/dsh-webbridge",
+    "dsh-kimi-browser"
+  ],
+  "fsmargoo": [
+    "dsh-agent-session-sources",
+    "dsh-custom-tool",
+    "dsh-security"
+  ],
+  "cyzlmh": [
+    "dsh-cyber-sec",
+    "dsh-pi-adapter"
+  ],
+  "chen-001": [
+    "chat-width",
+    "dsh-grok-tui"
+  ],
+  "tieboyh": [
+    "dsh-session-search"
+  ],
+  "zevorn": [
+    "dsh-plus",
+    "dsh-web-panel",
+    "zevorn/dsh-humanize",
+    "zevorn/oh-dsh-desktop"
+  ],
+  "lhh010": [
+    "dsh-bash-encoding",
+    "dsh-input-history",
+    "dsh-minigames",
+    "dsh-paste-input",
+    "dsh-ui-progress",
+    "dsh-ui-whale"
+  ],
+  "ccch1mneyyy": [
+    "dsh-cc-tui",
+    "dsh-working-activity"
+  ],
+  "samzong": [
+    "Recall"
+  ],
+  "moeblack": [
+    "moeblack/deepseek-manners",
+    "moeblack/dsh-message-edit",
+    "moeblack/dsh-prompt-studio"
+  ],
+  "tanpinsary": [
+    "dsh-island"
+  ],
+  "lcylym": [
+    "dsh-multimedia-webui-input"
+  ],
+  "ni0317": [
+    "repo-visibility-guard"
+  ],
+  "zyf2492313716-cloud": [
+    "dsh-desktop-mac"
+  ],
+  "dxww123": [
+    "dsh-alphasolve"
+  ],
+  "fisfzy": [
+    "fisfzy/ego-browser",
+    "fisfzy/zotero-harvest",
+    "fisfzy/zotero-wave-rag"
+  ],
+  "frostming": [
+    "dsh-nowledge-mem"
+  ],
+  "lipraty": [
+    "dsh-a2a",
+    "dsh-checkpoint",
+    "dsh-rewind"
+  ],
+  "menghuan1918": [
+    "DSH-UI4A",
+    "dsh-chat-thumb",
+    "dsh-feishu-notify",
+    "dsh-remote"
+  ],
+  "btspoony": [
+    "btspoony/dsh-advisor",
+    "btspoony/dsh-llm-fallbacks",
+    "btspoony/mstar-workflow"
+  ],
+  "lzszq": [
+    "dsh-scholar"
+  ],
+  "nothing1024": [
+    "dsh-issue-like-skill"
+  ],
+  "laplaceyoung": [
+    "dsh-session-cluster",
+    "dsh-web-workflow-visualizer",
+    "oh-my-dsh"
+  ],
+  "chen-zz20": [
+    "dsh-latex",
+    "dsh-lazyfish",
+    "dsh-skill-stats"
+  ],
+  "renat3u": [
+    "renat3u/dsh-paseo",
+    "renat3u/dsh-web-archive",
+    "renat3u/tonghuashun-webui"
+  ],
+  "anillc": [
+    "dsh-android"
+  ],
+  "taekchef": [
+    "dsh-club",
+    "dsh-desktop-tools",
+    "dsh-genui",
+    "taekchef/dsh-annotation"
+  ],
+  "nagi-ovo": [
+    "dsh-find-plugins",
+    "dsh-visualize",
+    "nagi-ovo/dsh-ads"
+  ],
+  "small-tailqwq": [
+    "dsh-deep-whale",
+    "dsh-deepcel",
+    "dsh-tps"
+  ],
+  "anionex": [
+    "dsh-computer-use",
+    "dsh-design",
+    "dsh-suggested-replies",
+    "dsh-turn-rewind",
+    "dsh-vision-toolkit"
+  ],
+  "r05en1cu": [
+    "dsh-save-intp"
+  ],
+  "cacppuccino": [
+    "cross-harness-cite"
+  ],
+  "lehhair": [
+    "lehhair/dsh-diff-viewer",
+    "lehhair/dsh-mobile",
+    "lehhair/dsh-split-panes"
+  ],
+  "hikariming": [
+    "dsh-activity-plugin",
+    "dsh-tavern-plugin",
+    "dsh-travel-plugin",
+    "dshfind",
+    "savemoneybenchmark"
+  ],
+  "huanlinoto": [
+    "dsh-aigc-canvas",
+    "dsh-anti-ads",
+    "dsh-auto-blame",
+    "dsh-better-sidebar-plugin-office",
+    "dsh-d399",
+    "dsh-interpreters",
+    "dsh-mineru",
+    "dsh-pet-rs",
+    "dsh-sleep",
+    "dsh-spur",
+    "ya-workspace-sidebar",
+    "yet-another-subagent"
+  ],
+  "flytomayday80": [
+    "dsh-pet"
+  ],
+  "hypatiamay": [
+    "dsh-vscode"
+  ],
+  "anacondakc": [
+    "anacondakc/dsh-custom-css",
+    "anacondakc/dsh-douyin",
+    "anacondakc/dsh-stock-market",
+    "dsh-plugin-guide"
+  ],
+  "vibeinging": [
+    "vibeinging/dsh-agent-budget",
+    "vibeinging/dsh-tool-search",
+    "vibeinging/dsh-trace",
+    "vibeinging/dsh-turn-navigator"
+  ],
+  "fakechris": [
+    "dsh-skill-session-recovery",
+    "fakechris/dsh-harness-ops",
+    "fakechris/dsh-track"
+  ],
+  "cyq1017": [
+    "dsh-selection-chat"
+  ],
+  "yjh051108": [
+    "dsh-browser-panel",
+    "dsh-code-map",
+    "dsh-engram-relay",
+    "dsh-super-injector",
+    "dsh-voice-chat"
+  ],
+  "laplace": [
+    "dsh-qq2006"
+  ],
+  "grivn": [
+    "dsh-sonar",
+    "dsh-teamwork"
+  ],
+  "c4i890": [
+    "dsh-question-collapse"
+  ],
+  "pandashere": [
+    "dsh-codex-bridge",
+    "dsh-kimi-bridge",
+    "dsh-self-control-guard"
+  ],
+  "canglongcl": [
+    "dsh-web-review"
+  ],
+  "whiteguo233": [
+    "whiteguo233/dsh-cc-connect",
+    "whiteguo233/dsh-openbiliclaw"
+  ],
+  "dingyi222666": [
+    "dingyi222666/dsh-focus-chat",
+    "dingyi222666/dsh-session-notification"
+  ],
+  "xiaohai-78": [
+    "Top"
+  ],
+  "shiroeirin": [
+    "dsh-meme",
+    "dsh-music-player"
+  ],
+  "hewzhew": [
+    "dsh-agent-rp"
+  ],
+  "cexll": [
+    "dsh-office",
+    "dsh-tui-front-door"
+  ],
+  "snnh": [
+    "dsh-easy-ctx-manager"
+  ],
+  "insidegalaxyeye": [
+    "browser4-dsh"
+  ],
+  "undefined-moe": [
+    "show-bash-command"
+  ],
+  "hellodigua": [
+    "hellodigua/dsh-emoji",
+    "hellodigua/dsh-share"
+  ],
+  "havingautism": [
+    "havingautism/dsh-deepresearch",
+    "havingautism/dsh-notebooks",
+    "havingautism/dsh-ultra-ui"
+  ],
+  "qyw233": [
+    "dsh-deeplink"
+  ],
+  "wyuc": [
+    "dsh-openmaic"
+  ],
+  "wanghao9610": [
+    "dsh-STAGE",
+    "dsh-STAR"
+  ],
+  "zacklinkk": [
+    "dsh-daily-progress",
+    "dsh-ernie-image",
+    "dsh-fun-ticker",
+    "dsh-longbridge",
+    "dsh-paddle-ocr",
+    "dsh-voice-funasr"
+  ],
+  "adamplatin123": [
+    "adamplatin123/dsh-plugin-radar",
+    "dsh-dzcf",
+    "tonghuashun-harness"
+  ],
+  "yhuplooking": [
+    "dsh-serenity-plugin"
+  ],
+  "sivancola": [
+    "dsh-client-ui-plan-execute",
+    "dsh-plan-execute"
+  ],
+  "ycp424c": [
+    "dsh-browser-bridge"
+  ],
+  "tt-wang": [
+    "dsh-slice-agent-loop"
+  ],
+  "deh40": [
+    "dsh-webui-live-html"
+  ],
+  "lum1104": [
+    "lum1104/dsh-browser"
+  ],
+  "buyi-wsgzg": [
+    "buyi-wsgzg/dsh-sidechain"
+  ],
+  "ccq1": [
+    "ccq1/dsh-side-panel"
+  ],
+  "andy8647": [
+    "andy8647/dsh-auto-approval"
+  ],
+  "turtle1999": [
+    "turtle1999/turtle-ui"
+  ],
+  "forrestchang": [
+    "forrestchang/dsh-multica-runtime"
+  ],
+  "yuezengwu": [
+    "yuezengwu/dsh-explain"
+  ],
+  "icetomoyo": [
+    "icetomoyo/dsh_workflow"
+  ],
+  "vmatrix1900": [
+    "vmatrix1900/dsh-mental-model"
+  ],
+  "zhu1090093659": [
+    "zhu1090093659/dsh-web-ui"
+  ],
+  "senmuuuuw": [
+    "senmuuuuw/dsh-group-photo"
+  ],
+  "void0312aurora": [
+    "void0312aurora/dsh-desktop-electron"
+  ],
+  "zhenyu98": [
+    "zhenyu98/context-doctor"
+  ],
+  "omdsh-dev": [
+    "omdsh-dev/7d7d",
+    "omdsh-dev/DSH-better-sidebar",
+    "omdsh-dev/dsh-auto-chess",
+    "omdsh-dev/dsh-data-agent",
+    "omdsh-dev/dsh-deep-research",
+    "omdsh-dev/dsh-github-integration",
+    "omdsh-dev/dsh-gomoku",
+    "omdsh-dev/dsh-inspect",
+    "omdsh-dev/dsh-kb-sieve",
+    "omdsh-dev/dsh-mnemon",
+    "omdsh-dev/dsh-mygo",
+    "omdsh-dev/dsh-plugin-skills",
+    "omdsh-dev/dsh-scout",
+    "omdsh-dev/dsh-tool-browser"
+  ],
+  "QwenLM": [
+    "QwenLM/Qwen-MM-Plugins"
+  ],
+  "hyperledger": [
+    "hyperledger/fabric"
+  ],
+  "steven-kid": [
+    "steven-kid/deepseek-harness-desktop"
+  ],
+  "ZSeven-W": [
+    "ZSeven-W/dsh-openpencil"
+  ],
+  "huiliyi37": [
+    "huiliyi37/dsh-tianshu-tui"
   ]
 }

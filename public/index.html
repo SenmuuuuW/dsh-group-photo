@@ -897,7 +897,10 @@
       '<p class="sub">' + esc(m.name || '') + ' · 第 ' + m.order + ' 位入镜 · ' + hh + ':' + mm + '</p>' +
       (m.message ? '<p style="color:var(--muted);line-height:1.8;margin:8px 0">“' + esc(m.message) + '”</p>' : '') +
       (w.length ? '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:10px 0">' +
-        w.slice(0, 6).map((r) => '<a href="https://github.com/' + esc(org) + '/' + esc(r) + '" target="_blank" rel="noopener" style="background:rgba(77,107,254,.1);border:1px solid rgba(77,107,254,.35);color:var(--amber);border-radius:999px;padding:3px 10px;font-size:11px;text-decoration:none">' + esc(r) + '</a>').join('') +
+        w.slice(0, 6).map((r) => {
+          const path = r.includes('/') ? r : org + '/' + r;
+          return '<a href="https://github.com/' + esc(path) + '" target="_blank" rel="noopener" style="background:rgba(77,107,254,.1);border:1px solid rgba(77,107,254,.35);color:var(--amber);border-radius:999px;padding:3px 10px;font-size:11px;text-decoration:none">' + esc(r) + '</a>';
+        }).join('') +
         '</div>' : '') +
       '<div style="display:flex;gap:10px;justify-content:center;margin-top:12px">' +
       '<button class="btn btn-ghost" id="modalLike" style="padding:8px 18px;font-size:.9rem">' + (m.liked ? '已赞' : '赞') + ' ' + (m.likes || 0) + '</button>' +
@@ -1185,7 +1188,10 @@
     const ws = m.works || [];
     let worksHtml = '';
     if (ws.length) {
-      const chip = (r) => '<a href="https://github.com/' + esc(org) + '/' + esc(r) + '" target="_blank" rel="noopener" title="' + esc(r) + '">' + esc(r) + '</a>';
+      const chip = (r) => {
+        const path = r.includes('/') ? r : org + '/' + r;
+        return '<a href="https://github.com/' + esc(path) + '" target="_blank" rel="noopener" title="' + esc(path) + '">' + esc(r) + '</a>';
+      };
       worksHtml = '<div class="works">' +
         ws.slice(0, 3).map(chip).join('') +
         (ws.length > 3

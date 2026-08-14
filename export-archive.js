@@ -41,7 +41,10 @@ const cards = dataMembers.map((m) => {
   const hh = String(t.getHours()).padStart(2, '0');
   const mm = String(t.getMinutes()).padStart(2, '0');
   const w = m.works || [];
-  const chip = (r) => '<a href="https://github.com/dsh-external/' + esc(r) + '" target="_blank" rel="noopener">' + esc(r) + '</a>';
+  const chip = (r) => {
+    const path = r.includes('/') ? r : 'dsh-external/' + r;
+    return '<a href="https://github.com/' + esc(path) + '" target="_blank" rel="noopener">' + esc(r) + '</a>';
+  };
   const worksHtml = w.length
     ? '<div class="works">' + w.slice(0, 3).map(chip).join('') +
       (w.length > 3
@@ -568,7 +571,10 @@ window.ARCHIVE = ${JSON.stringify(dataMembers).replace(/</g, '\\u003c')};
           '<p class="sub">' + esc(m.name || '') + ' · 第 ' + m.order + ' 位入镜 · ' + hh + ':' + mm + '</p>' +
           (m.message ? '<p style="color:var(--muted);line-height:1.8;margin:8px 0">“' + esc(m.message) + '”</p>' : '') +
           (w.length ? '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:10px 0">' +
-            w.slice(0, 6).map(function (r) { return '<a href="https://github.com/dsh-external/' + esc(r) + '" target="_blank" rel="noopener" style="background:rgba(77,107,254,.1);border:1px solid rgba(77,107,254,.35);color:var(--amber);border-radius:999px;padding:3px 10px;font-size:11px;text-decoration:none">' + esc(r) + '</a>'; }).join('') +
+            w.slice(0, 6).map(function (r) {
+              const path = r.includes('/') ? r : 'dsh-external/' + r;
+              return '<a href="https://github.com/' + esc(path) + '" target="_blank" rel="noopener" style="background:rgba(77,107,254,.1);border:1px solid rgba(77,107,254,.35);color:var(--amber);border-radius:999px;padding:3px 10px;font-size:11px;text-decoration:none">' + esc(r) + '</a>';
+            }).join('') +
             '</div>' : '') +
           '<p style="margin-top:10px"><a href="https://github.com/' + esc(m.login) + '" target="_blank" rel="noopener" style="color:var(--amber)">去 ta 的 GitHub →</a></p>' +
           '</div>';
